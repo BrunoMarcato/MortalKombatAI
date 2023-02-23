@@ -1,50 +1,59 @@
 import retro
-import cv2 as cv
-import numpy as np
 from gym import Env
 from gym.spaces import Box, MultiBinary
+from stable_baselines3.common.monitor import Monitor 
+from stable_baselines3.common.vec_env import DummyVecEnv, VecFrameStack
+import numpy as np
+import cv2
 
 class MortalKombat(Env):
     def __init__(self):
         super().__init__()
         self.observation_space = Box(low=0, high=255, shape=(84, 84, 1), dtype=np.uint8)
         self.action_space = MultiBinary(12)
-        
-        #instancia do jogo
-        self.game = retro.make(game='MortalKombat-Genesis', 
-                              use_restricted_actions=retro.Actions.FILTERED)
-        
-        
+        self.game = retro.make(game='MortalKombat3-Genesis', use_restricted_actions=retro.Actions.FILTERED)
+    
     def step(self, action):
-        observation, reward, done, info = self.game.step(action)
-        observation = self.preprocess(observation)
+        obs, reward, done, info = self.game.step(action)
+        obs = self.preprocess(obs)
         
-        #frame delta
-        frame_change = observation - self.previous_frame
-        self.previous_frame = observation
-        
-        #reward function
-        reward = info['score']  - self.score
-        self.score  = info['score']
-        
-        return frame_change, reward, done, info
-    
-    def reset(self):
-        observation = self.game.reset()
-        observation = self.preprocess(observation)
-        self.previous_frame = observation
-        self.score = 0
-        return observation
-        
-    def render(self):
-        self.game.render()
-        
-    def close(self):
-        self.game.close()
-    
-    def preprocess(self, observation):
-        gray = cv.cvtColor(observation, cv.COLOR_BGR2GRAY)
-        resize = cv.resize(gray, (84, 84), interpolation = cv.INTER_CUBIC)
-        channels = np.reshape(resize, (84, 84, 1))
-        return channels
+        # Shape reward
+        reward = (self.enemy_health - info['enemy_health'])*2 + (info['health'] - self.health)
 
+        return obs, reward, done, info 
+    
+    def render(self, *args, **kwargs): 
+        self.game.render()
+
+    def reset(self):
+        self.previous_frame = np.zeros(self.game.observation_space.shape)
+        
+        # Frame delta
+        obs = self.game.reset()
+        obs = self.preprocess(obs)
+        self.previous_frame = obs
+        self.health = 166
+        self.enemy_health = 166
+        
+        # Create initial variables
+        self.score = 0
+
+        return obs
+    
+    def preprocess(self,observation):
+        crop = observation[50:224, 0:320]
+        gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+        resize = cv2.resize(gray, (84,84), interpolation=cv2.INTER_CUBIC)
+        state = np.reshape(resize, (84,84,1))
+        return state
+    
+    def close(self): 
+        self.game.close()
+
+def create_env(LOG_DIR):
+    env = MortalKombat()
+    env = Monitor(env, LOG_DIR)
+    env = DummyVecEnv([lambda: env])
+    env = VecFrameStack(env, 4, channels_order='last')
+
+    return env

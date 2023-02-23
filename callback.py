@@ -4,10 +4,10 @@ import os
 # ------------------------------------------------------------------------------------
 
 
-class TrainAndLoggingCallback(BaseCallback):
+class Callbacks(BaseCallback):
 
     def __init__(self, check_freq, save_path, verbose=1):
-        super(TrainAndLoggingCallback, self).__init__(verbose)
+        super(Callbacks, self).__init__(verbose)
         self.check_freq = check_freq
         self.save_path = save_path
 
