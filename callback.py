@@ -17,7 +17,7 @@ class Callbacks(BaseCallback):
 
     def _on_step(self):
         if self.n_calls % self.check_freq == 0:
-            model_path = os.path.join(self.save_path, 'best_model_{}'.format(self.n_calls))
+            model_path = os.path.join(self.save_path, f'model_{self.n_calls}')
             self.model.save(model_path)
 
         return True
