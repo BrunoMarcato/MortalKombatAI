@@ -11,14 +11,14 @@ class MortalKombat(Env):
         super().__init__()
         self.observation_space = Box(low=0, high=255, shape=(84, 84, 1), dtype=np.uint8)
         self.action_space = MultiBinary(12)
-        self.game = retro.make(game='MortalKombat3-Genesis', use_restricted_actions=retro.Actions.FILTERED)
+        self.game = env = retro.make("MortalKombat-Genesis", inttype=retro.data.Integrations.ALL)
     
     def step(self, action):
         obs, reward, done, info = self.game.step(action)
         obs = self.preprocess(obs)
         
         # Shape reward
-        reward = (self.enemy_health - info['enemy_health'])*2 + (info['health'] - self.health)
+        reward = (self.enemy_health - info['enemy_health'])*2 - (self.health - info['health'])
 
         return obs, reward, done, info 
     
@@ -34,9 +34,6 @@ class MortalKombat(Env):
         self.previous_frame = obs
         self.health = 166
         self.enemy_health = 166
-        
-        # Create initial variables
-        self.score = 0
 
         return obs
     
