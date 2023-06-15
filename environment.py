@@ -9,22 +9,29 @@ import cv2
 class MortalKombat(Env):
     def __init__(self):
         super().__init__()
-        self.observation_space = Box(low=0, high=255, shape=(84, 84, 1), dtype=np.uint8)
+        self.observation_space = Box(low=0, high=255, shape=(128, 128, 1), dtype=np.uint8)
         self.action_space = MultiBinary(12)
-        self.game = env = retro.make("MortalKombat-Genesis", inttype=retro.data.Integrations.ALL)
+        self.game = retro.make(game='MortalKombat-Genesis', inttype=retro.data.Integrations.ALL, use_restricted_actions = retro.Actions.FILTERED)
     
     def step(self, action):
         obs, reward, done, info = self.game.step(action)
         obs = self.preprocess(obs)
         
+        # Preprocess frame from game
+        frame_delta = obs
+#         - self.previous_frame
+#         self.previous_frame = obs 
+        
         # Shape reward
-        reward = (self.enemy_health - info['enemy_health'])*2 - (self.health - info['health'])
+        reward = info['health'] - info['enemy_health'] + 200*(info['matches_won'] - self.matches_won) - 200*(info['enemy_matches_won'] - self.enemy_matches_won)
+        self.matches_won = info['matches_won']
+        self.enemy_matches_won = info['enemy_matches_won']
 
-        return obs, reward, done, info 
+        return frame_delta, reward, done, info 
     
     def render(self, *args, **kwargs): 
         self.game.render()
-
+    
     def reset(self):
         self.previous_frame = np.zeros(self.game.observation_space.shape)
         
@@ -32,19 +39,21 @@ class MortalKombat(Env):
         obs = self.game.reset()
         obs = self.preprocess(obs)
         self.previous_frame = obs
-        self.health = 166
-        self.enemy_health = 166
+        
+        self.health = 120
+        self.enemy_health = 120
+        self.matches_won = 0
+        self.enemy_matches_won = 0
 
         return obs
     
-    def preprocess(self,observation):
-        crop = observation[50:224, 0:320]
-        gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
-        resize = cv2.resize(gray, (84,84), interpolation=cv2.INTER_CUBIC)
-        state = np.reshape(resize, (84,84,1))
+    def preprocess(self, observation): 
+        gray = cv2.cvtColor(observation, cv2.COLOR_BGR2GRAY)
+        resize = cv2.resize(gray, (128,128), interpolation=cv2.INTER_CUBIC)
+        state = np.reshape(resize, (128,128,1))
         return state
     
-    def close(self): 
+    def close(self):
         self.game.close()
 
 def create_env(LOG_DIR):

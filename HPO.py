@@ -34,10 +34,10 @@ def optimize_agent(trial):
         
         # Algoritmo
         model = PPO('CnnPolicy', env, tensorboard_log = LOG_DIR, verbose = 0, **model_parameters)
-        model.learn(total_timesteps=150000)
+        model.learn(total_timesteps=100000)
         
         #Evaluate
-        mean_reward, _ = evaluate_policy(model, env, n_eval_episodes = 20)
+        mean_reward, _ = evaluate_policy(model, env, n_eval_episodes = 100)
         env.close()
         
         SAVE_PATH = os.path.join(OPT_DIR, f'trial_{trial.number}_model')
@@ -54,7 +54,7 @@ def main():
     print('\n\n... Finding Hyper Parameters ...\n\n')
 
     study = optuna.create_study(direction = 'maximize')
-    study.optimize(optimize_agent, n_trials=100, n_jobs=1)
+    study.optimize(optimize_agent, n_trials=10, n_jobs=1)
 
     # Create environment 
     env = create_env(LOG_DIR= LOG_DIR)
