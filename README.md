@@ -8,12 +8,6 @@ You must import the rom using the command below, inside the folder where it is l
 
 `python -m retro.import .`
 
-## Run
-
-Please, run train.py file via terminal, after import the rom, passing the total_timesteps number, of model.learn function, as an argument.
-
-`python -m train.py [total_timesteps]`
-
 ## Notes
 
 The requirements.txt file lists all the dependencies that is needed to run this project. They will be installed using:
