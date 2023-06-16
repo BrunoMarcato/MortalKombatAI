@@ -1,6 +1,6 @@
 # Mortal Kombat AI
 
-This repository implements a way to train an agent to play (and maybe win) the 1992 classic Mortal kombat.
+This repository implements a way to train an agent to play the 1992 classic Mortal kombat.
 
 ## Rom
 
